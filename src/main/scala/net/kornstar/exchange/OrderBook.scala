@@ -30,9 +30,7 @@ object OrderBook {
       Order(id,timeCreated,isBid,amount,amount,price)
     }
   }
-
-
-
+  //TODO use SortedMap id -> Order
   case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],fullFilledOrders:List[Order] = List.empty[Order]) {
 
     def submit(o:Order) = {
@@ -76,6 +74,15 @@ object OrderBook {
       }
       _match(newBidSet,newAskSet,fullFilledOrders)
     }
+
+    def cancel(id:Int):OrderBook = { //TODO check and make sure the Order is not already partialy filled
+      this.copy(bids = bids.filterNot(_.id == id),asks = asks.filterNot(_.id == id))
+    }
+
+    def cancel(o:Order):OrderBook = {
+      this.copy(bids = bids - o,asks = asks - o)
+    }
+
   }
 
   def apply(assetId:Int) ={

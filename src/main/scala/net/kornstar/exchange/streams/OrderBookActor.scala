@@ -2,6 +2,7 @@ package net.kornstar.exchange.streams
 
 import akka.actor.{ActorLogging, Actor}
 import akka.stream.actor.{ActorSubscriberMessage, OneByOneRequestStrategy, ActorPublisher, ActorSubscriber}
+import net.kornstar.exchange.streams.OrderBookActor.Message.{CancelOrder, PlaceOrder}
 import net.kornstar.exchange.{OrderBook =>OB}
 import net.kornstar.exchange.OrderBook.{OrderBook, Order}
 import net.kornstar.exchange.streams.messages.Tick
@@ -12,6 +13,16 @@ import scala.util.Try
 /**
  * Created by ben on 5/5/15.
  */
+object OrderBookActor {
+  trait Message
+  object Message {
+    case class PlaceOrder(o:Order) extends Message
+    case class CancelOrder(id:Int) extends Message
+    case class GetOrder(id:Int) extends Message
+    case object GetOrderBook extends Message
+
+  }
+}
 class OrderBookActor extends Actor with ActorLogging {
   import context._
 
@@ -25,9 +36,12 @@ class OrderBookActor extends Actor with ActorLogging {
   }
 
   def running(ob:OrderBook ):Receive = {
-    case ActorSubscriberMessage.OnNext(o:Order) =>
+    case ActorSubscriberMessage.OnNext(PlaceOrder(o)) =>
       become(running(ob.submit(o)))
-      sender() ! 1
+      sender() ! o.id
+    case ActorSubscriberMessage.OnNext(CancelOrder(id)) =>
+      become(running(ob.cancel(id)))
+
 
     case Tick =>
       log.info(s"New fullfilled orders: ${ob.fullFilledOrders}")
