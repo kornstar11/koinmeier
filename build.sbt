@@ -9,3 +9,5 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 resolvers += Resolver.sonatypeRepo("public")
 
 libraryDependencies += "org.specs2" %% "specs2" % "2.3.12" % "test"
+
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.3"
