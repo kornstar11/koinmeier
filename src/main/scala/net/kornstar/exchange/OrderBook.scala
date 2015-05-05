@@ -36,6 +36,7 @@ object OrderBook {
   case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],fullFilledOrders:List[Order] = List.empty[Order]) {
 
     def submit(o:Order) = {
+      lazy val settlingTime = System.currentTimeMillis()
       val (newBidSet,newAskSet) = if(o.isBid) {
         bids + o -> asks
       } else {
@@ -56,8 +57,8 @@ object OrderBook {
           if(topBid.price >= topAsk.price) { //Do the prices intersect?
             logger.debug(s"TopBid crosses the topAsk. Will fulfil ")
             val averagePrice = (topBid.price + topAsk.price) / 2 //Give the settledPrice as the avereage
-            val (mostQuantityOrder,leastQuantityOrder) = if(topBid.remainingAmount > topAsk.remainingAmount) topBid.copy(remainingAmount = topBid.remainingAmount - topAsk.remainingAmount,settledPrice = averagePrice) -> topAsk.copy(remainingAmount = 0,settledPrice = averagePrice)
-                                                         else topAsk.copy(remainingAmount = topAsk.remainingAmount - topBid.remainingAmount,settledPrice = averagePrice) -> topBid.copy(remainingAmount = 0,settledPrice = averagePrice)
+            val (mostQuantityOrder,leastQuantityOrder) = if(topBid.remainingAmount > topAsk.remainingAmount) topBid.copy(remainingAmount = topBid.remainingAmount - topAsk.remainingAmount,settledPrice = averagePrice) -> topAsk.copy(remainingAmount = 0,settledPrice = averagePrice,timeSettled = Some(settlingTime))
+                                                         else topAsk.copy(remainingAmount = topAsk.remainingAmount - topBid.remainingAmount,settledPrice = averagePrice) -> topBid.copy(remainingAmount = 0,settledPrice = averagePrice,timeSettled = Some(settlingTime))
             if(mostQuantityOrder.remainingAmount > 0){
               logger.debug(s"${mostQuantityOrder} still has remaining.")
               if(mostQuantityOrder.isBid) {
@@ -66,7 +67,7 @@ object OrderBook {
                 _match(bids.tail ,asks.tail + mostQuantityOrder,leastQuantityOrder :: fullFilledOrders)
               }
             } else {
-              _match(bids.tail,asks.tail,mostQuantityOrder :: leastQuantityOrder :: fullFilledOrders)
+              _match(bids.tail,asks.tail,mostQuantityOrder.copy(timeSettled = Some(settlingTime)) :: leastQuantityOrder :: fullFilledOrders)
             }
           } else {
             this.copy(bids = bids,asks = asks,fullFilledOrders = fullFilledOrders)

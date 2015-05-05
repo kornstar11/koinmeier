@@ -62,6 +62,7 @@ class OrderBookTest extends Specification {
       val clearedOrderBook = ordersIn1.copy(fullFilledOrders = List.empty[OrderBook.Order])
 
       val ordersIn2 = clearedOrderBook.submit(bids(3))
+      println(ordersIn2)
       ordersIn2.fullFilledOrders.isEmpty must be equalTo(false)
       ordersIn2.fullFilledOrders.count(_.id == 4) mustEqual(1)
       ordersIn2.fullFilledOrders.count(_.id == 5) mustEqual(1)
