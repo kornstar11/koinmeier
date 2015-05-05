@@ -49,7 +49,7 @@ object OrderBook {
 
         if(topBidOpt.isEmpty || topAskOpt.isEmpty) {
           logger.debug(s"One or more sets are empty")
-          this.copy(bids = newBidSet,asks = newAskSet,fullFilledOrders = fullFilledOrders)
+          this.copy(bids = bids,asks = asks,fullFilledOrders = fullFilledOrders)
         } else {
           val topBid = topBidOpt.get
           val topAsk = topAskOpt.get
@@ -69,7 +69,7 @@ object OrderBook {
               _match(bids.tail,asks.tail,mostQuantityOrder :: leastQuantityOrder :: fullFilledOrders)
             }
           } else {
-            this.copy(bids = newBidSet,asks = newAskSet,fullFilledOrders = fullFilledOrders)
+            this.copy(bids = bids,asks = asks,fullFilledOrders = fullFilledOrders)
           }
         }
       }
