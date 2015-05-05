@@ -4,6 +4,9 @@ import scala.annotation.tailrec
 import scala.collection.immutable.{SortedSet}
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import scala.util.Try
+
 /**
  * Created by Ben Kornmeier on 5/4/2015.
  */
@@ -75,12 +78,28 @@ object OrderBook {
       _match(newBidSet,newAskSet,fullFilledOrders)
     }
 
-    def cancel(id:Int):OrderBook = { //TODO check and make sure the Order is not already partialy filled
-      this.copy(bids = bids.filterNot(_.id == id),asks = asks.filterNot(_.id == id))
+    def cancel(id:Int):Try[OrderBook] = { //TODO check and make sure the Order is not already partialy filled
+      val potentialBid = bids.find(_.id == id)
+      val potentialAsk = asks.find(_.id == id)
+
+      if(potentialAsk.isDefined) {
+        cancel(potentialAsk.get)
+      } else {
+        cancel(potentialBid.get)
+      }
     }
 
-    def cancel(o:Order):OrderBook = {
+    def cancel(o:Order):Try[OrderBook] = Try {
+      assert(o.remainingAmount == o.amount,"Order is already half filled!")
       this.copy(bids = bids - o,asks = asks - o)
+    }
+
+    def get(id:Int):Option[Order] = {
+      val potentialBidOrder = bids.find(_.id == id)
+      if(potentialBidOrder.isDefined)
+        potentialBidOrder
+      else asks.find(_.id == id)
+
     }
 
   }

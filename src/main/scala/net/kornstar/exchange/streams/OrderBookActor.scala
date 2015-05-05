@@ -2,13 +2,13 @@ package net.kornstar.exchange.streams
 
 import akka.actor.{ActorLogging, Actor}
 import akka.stream.actor.{ActorSubscriberMessage, OneByOneRequestStrategy, ActorPublisher, ActorSubscriber}
-import net.kornstar.exchange.streams.OrderBookActor.Message.{CancelOrder, PlaceOrder}
+import net.kornstar.exchange.streams.OrderBookActor.Message.{GetOrder, CancelOrder, PlaceOrder}
 import net.kornstar.exchange.{OrderBook =>OB}
 import net.kornstar.exchange.OrderBook.{OrderBook, Order}
 import net.kornstar.exchange.streams.messages.Tick
 import scala.concurrent.duration._
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 /**
  * Created by ben on 5/5/15.
@@ -40,7 +40,14 @@ class OrderBookActor extends Actor with ActorLogging {
       become(running(ob.submit(o)))
       sender() ! o.id
     case ActorSubscriberMessage.OnNext(CancelOrder(id)) =>
-      become(running(ob.cancel(id)))
+      ob.cancel(id) match {
+        case Success(ob) =>
+          become(running(ob))
+        case Failure(e) =>
+          //become(running(ob))
+      }
+    case ActorSubscriberMessage.OnNext(GetOrder(id)) =>
+      val potentialOrder = ob.get(id)
 
 
     case Tick =>
