@@ -72,9 +72,6 @@ class OrderBookTest extends Specification {
       ordersIn2.bids.count(_.id == 4) mustEqual(0)
       ordersIn2.asks.count(_.id == 4) mustEqual(0)
 
-
-
-
     }
   }
 
