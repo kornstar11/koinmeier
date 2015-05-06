@@ -1,1 +1,2 @@
 curl -d '{"amount":1,"price":1.2,"isBid":true}' http://localhost:8081/order
+curl -X DELETE  http://localhost:8081/order?id=1
