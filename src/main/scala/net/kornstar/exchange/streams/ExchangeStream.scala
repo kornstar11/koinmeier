@@ -12,6 +12,7 @@ import akka.http.scaladsl.model.HttpMethods._
 import akka.stream.scaladsl.{ Flow, Sink }
 import akka.util.ByteString
 import net.kornstar.exchange.OrderBook.Order
+import net.kornstar.exchange.streams.OrderBookActor.Message.{CancelOrder, PlaceOrder}
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.Logger
@@ -43,12 +44,18 @@ object ExchangeStream {
                 acc ++ b
             }.map{b =>
               val j = Json.parse(b.toArray).as[Order]//b.toArray
-              (GET,headers.seq,j)
+              (headers.seq,j)
+            }.flatMap{
+              case (headers,data) =>
+                orderBookActor.ask(ActorSubscriberMessage.OnNext(PlaceOrder(data))).mapTo[Int]
             }
+          case e@HttpRequest(DELETE, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
+            val id = u.query.get("id").get
+            orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Int]
+
+
           case e: HttpRequest =>
             Future.failed(new Exception("404")) //(GET,Seq.empty[HttpHeader],ByteString.empty))
-        }.mapAsync(3) {case(method,headers,data) =>
-            orderBookActor.ask(ActorSubscriberMessage.OnNext(data)).mapTo[Int]
         } map {i =>
           HttpResponse(200, entity = i.toString)
         }

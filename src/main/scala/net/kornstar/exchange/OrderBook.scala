@@ -78,7 +78,7 @@ object OrderBook {
       _match(newBidSet,newAskSet,fullFilledOrders)
     }
 
-    def cancel(id:Int):Try[OrderBook] = { //TODO check and make sure the Order is not already partialy filled
+    def cancel(id:Int):Try[(OrderBook,Order)] = { //TODO check and make sure the Order is not already partialy filled
       val potentialBid = bids.find(_.id == id)
       val potentialAsk = asks.find(_.id == id)
 
@@ -89,9 +89,9 @@ object OrderBook {
       }
     }
 
-    def cancel(o:Order):Try[OrderBook] = Try {
+    def cancel(o:Order):Try[(OrderBook,Order)] = Try {
       assert(o.remainingAmount == o.amount,"Order is already half filled!")
-      this.copy(bids = bids - o,asks = asks - o)
+      this.copy(bids = bids - o,asks = asks - o) -> o
     }
 
     def get(id:Int):Option[Order] = {

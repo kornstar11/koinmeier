@@ -41,14 +41,17 @@ class OrderBookActor extends Actor with ActorLogging {
       sender() ! o.id
     case ActorSubscriberMessage.OnNext(CancelOrder(id)) =>
       ob.cancel(id) match {
-        case Success(ob) =>
+        case Success((ob,o)) =>
           become(running(ob))
-        case Failure(e) =>
-          //become(running(ob))
+          sender() ! Success(o)
+
+        case f@Failure(e) =>
+          log.error(e,"Error canceling")
+          sender() ! f
       }
     case ActorSubscriberMessage.OnNext(GetOrder(id)) =>
       val potentialOrder = ob.get(id)
-
+      sender() ! potentialOrder
 
     case Tick =>
       log.info(s"New fullfilled orders: ${ob.fullFilledOrders}")
