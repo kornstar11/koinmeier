@@ -9,9 +9,10 @@ class OrderBookTest extends Specification {
   sequential
   "OrderBookTest" should {
     "bids and asks should be ordered right" in {
-      val bids = OrderBook.bidSet + (OrderBook.Order(1,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0))
-      val asks = OrderBook.askSet + (OrderBook.Order(1,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0))
-
+      val bids = OrderBook.bidSet + (OrderBook.Order(0,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0), OrderBook.Order(4,1L,true,1,2.0),OrderBook.Order(5,1L,true,1,1.1) )
+      val asks = OrderBook.askSet + (OrderBook.Order(2,1L,true,1,1.1), OrderBook.Order(3,1L,true,1,2.0))
+      println("")
+      println(s"BIDS====${bids}")
 
       bids.head.price must be equalTo(2.0)
       asks.head.price must be equalTo(1.1)
@@ -19,8 +20,8 @@ class OrderBookTest extends Specification {
     }
 
     "not match a order when there is a spread" in {
-      val bids = IndexedSeq(OrderBook.Order(1,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0))
-      val asks = IndexedSeq(OrderBook.Order(1,1L,false,1,3.1), OrderBook.Order(1,1L,false,1,4.0))
+      val bids = IndexedSeq(OrderBook.Order(0,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0))
+      val asks = IndexedSeq(OrderBook.Order(2,1L,false,1,3.1), OrderBook.Order(3,1L,false,1,4.0))
 
       val orderBook = OrderBook(1)
       val ordersIn1 = orderBook.submit(bids(0)).submit(asks(0)).submit(bids(1)).submit(asks(1))
@@ -34,8 +35,8 @@ class OrderBookTest extends Specification {
       ordersIn1.asks.contains(asks(1)) must be equalTo(true)
     }
     "match a exact order and remove from the orderBook" in {
-      val bids = IndexedSeq(OrderBook.Order(1,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0), OrderBook.Order(1,1L,true,1,2.1),OrderBook.Order(4,1L,true,1,3.1)  )
-      val asks = IndexedSeq(OrderBook.Order(5,1L,false,1,3.1), OrderBook.Order(1,1L,false,1,4.0))
+      val bids = IndexedSeq(OrderBook.Order(0,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0), OrderBook.Order(2,1L,true,1,2.1),OrderBook.Order(4,1L,true,1,3.1)  )
+      val asks = IndexedSeq(OrderBook.Order(5,1L,false,1,3.1), OrderBook.Order(6,1L,false,1,4.0))
 
       val orderBook = OrderBook(1)
       val ordersIn1 = orderBook.submit(bids(0)).submit(asks(0)).submit(bids(1)).submit(asks(1)).submit(bids(2))

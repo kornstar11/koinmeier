@@ -15,7 +15,11 @@ object OrderBook {
   val logger = LoggerFactory.getLogger(classOf[OrderBook])
   val askOrdering = new Ordering[Order]{
     def compare(x:Order,y:Order) = {
-      x.price.compareTo(y.price)
+      val priceCompare = x.price.compareTo(y.price)
+      if(priceCompare == 0)
+        x.id.compareTo(y.id)
+      else
+        priceCompare
     }
   }
   val bidOrdering = askOrdering.reverse
