@@ -11,7 +11,8 @@ import akka.stream.scaladsl.Source
 import akka.http.scaladsl.model.HttpMethods._
 import akka.stream.scaladsl.{ Flow, Sink }
 import akka.util.ByteString
-import net.kornstar.exchange.OrderBook.Order
+import net.kornstar.exchange.collection.OrderBook
+import OrderBook.Order
 import net.kornstar.exchange.streams.OrderBookActor.Message.{CancelOrder, PlaceOrder}
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,7 +34,7 @@ object ExchangeStream {
   def apply()(implicit system:ActorSystem,materializer: ActorFlowMaterializer) = {
     val orderBookActor = system.actorOf(Props[OrderBookActor])
     val serverSource: Source[Http.IncomingConnection, Future[Http.ServerBinding]] =
-      Http(system).bind(interface = "localhost", port = 8081)
+      Http(system).bind(interface = "", port = 8081)
 
     val bindingFuture: Future[Http.ServerBinding] =serverSource.to(Sink.foreach { connection =>
       logger.info("Accepted new connection from " + connection.remoteAddress)

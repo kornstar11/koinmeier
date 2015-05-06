@@ -1,5 +1,6 @@
 package net.kornstar.exchange
 
+import net.kornstar.exchange.collection.OrderBook
 import org.specs2.mutable.Specification
 
 /**

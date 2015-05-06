@@ -1,11 +1,9 @@
-package net.kornstar.exchange
+package net.kornstar.exchange.collection
 
-import scala.annotation.tailrec
-import scala.collection.immutable.{SortedSet}
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import scala.util.Try
+import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 
 /**
  * Created by Ben Kornmeier on 5/4/2015.
