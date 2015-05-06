@@ -78,20 +78,28 @@ object OrderBook {
       _match(newBidSet,newAskSet,fullFilledOrders)
     }
 
-    def cancel(id:Int):Try[(OrderBook,Order)] = { //TODO check and make sure the Order is not already partialy filled
-      val potentialBid = bids.find(_.id == id)
-      val potentialAsk = asks.find(_.id == id)
-
-      if(potentialAsk.isDefined) {
-        Try{potentialAsk.get}.flatMap(cancel(_))
+    def cancel(id:Int):(OrderBook,Option[Order]) = { //TODO check and make sure the Order is not already partialy filled
+      val bidOpt = bids.find(_.id == id)
+      val askOpt = asks.find(_.id == id)
+      if(bidOpt.isDefined) {
+        val bid = bidOpt.get
+        (cancel(bid),Some(bid))
+      } else if(askOpt.isDefined) {
+        val ask = askOpt.get
+        (cancel(ask),Some(ask))
       } else {
-        Try{potentialBid.get}.flatMap(cancel(_))
+        (this,Option.empty[Order])
       }
     }
 
-    def cancel(o:Order):Try[(OrderBook,Order)] = Try {
-      assert(o.remainingAmount == o.amount,"Order is already half filled!")
-      this.copy(bids = bids - o,asks = asks - o) -> o
+    protected def cancel(o:Order):OrderBook = {
+      //assert(o.remainingAmount == o.amount,"Order is already half filled!")
+      if(o.remainingAmount == o.amount) {
+        this.copy(bids = bids - o,asks = asks - o)
+      } else {
+        logger.warn(s"Order is already half filled!")
+        this
+      }
     }
 
     def get(id:Int):Option[Order] = {

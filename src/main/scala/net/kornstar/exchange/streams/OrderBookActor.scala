@@ -40,15 +40,10 @@ class OrderBookActor extends Actor with ActorLogging {
       become(running(ob.submit(o)))
       sender() ! o.id
     case ActorSubscriberMessage.OnNext(CancelOrder(id)) =>
-      ob.cancel(id) match {
-        case Success((ob,o)) =>
-          become(running(ob))
-          sender() ! Success(o)
+      val (nOrderBook, orderOpt) = ob.cancel(id)
+      become(running(nOrderBook))
+      sender() ! orderOpt
 
-        case f@Failure(e) =>
-          log.error(e,"Error canceling")
-          sender() ! Failure.apply[Order](e)
-      }
     case ActorSubscriberMessage.OnNext(GetOrder(id)) =>
       val potentialOrder = ob.get(id)
       sender() ! potentialOrder

@@ -57,11 +57,11 @@ object ExchangeStream {
           case e@HttpRequest(DELETE, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
             val id = u.query.get("id").get
             logger.debug(s"delete ID: ${id}")
-            orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Try[Order]].map{
-              case Success(o) =>
+            orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Option[Order]].map{
+              case Some(o) =>
                 val jsonString = Json.toJson(o)(dataWrites).toString()
                 HttpResponse(200,entity = jsonString)
-              case Failure(e) =>
+              case None =>
                 HttpResponse(400, entity = "Order not found")
             }
           case e@HttpRequest(GET, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
