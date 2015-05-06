@@ -38,7 +38,7 @@ class OrderBookActor extends Actor with ActorLogging {
   def running(ob:OrderBook ):Receive = {
     case ActorSubscriberMessage.OnNext(PlaceOrder(o)) =>
       become(running(ob.submit(o)))
-      sender() ! o.id
+      sender() ! o
     case ActorSubscriberMessage.OnNext(CancelOrder(id)) =>
       val (nOrderBook, orderOpt) = ob.cancel(id)
       become(running(nOrderBook))

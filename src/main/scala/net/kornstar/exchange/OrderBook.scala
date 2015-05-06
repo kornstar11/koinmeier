@@ -71,6 +71,7 @@ object OrderBook {
               _match(bids.tail,asks.tail,mostQuantityOrder.copy(timeSettled = Some(settlingTime)) :: leastQuantityOrder :: fullFilledOrders)
             }
           } else {
+            logger.debug(s"No intersection")
             this.copy(bids = bids,asks = asks,fullFilledOrders = fullFilledOrders)
           }
         }

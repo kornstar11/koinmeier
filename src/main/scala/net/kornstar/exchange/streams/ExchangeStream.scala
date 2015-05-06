@@ -50,9 +50,9 @@ object ExchangeStream {
               (headers.seq,j)
             }.flatMap{
               case (headers,data) =>
-                orderBookActor.ask(ActorSubscriberMessage.OnNext(PlaceOrder(data))).mapTo[Int]
-            }.map{id =>
-              HttpResponse(200, entity = id.toString)
+                orderBookActor.ask(ActorSubscriberMessage.OnNext(PlaceOrder(data))).mapTo[Order]
+            }.map{o =>
+              HttpResponse(200, entity = Json.toJson(o)(dataWrites).toString())
             }
           case e@HttpRequest(DELETE, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
             val id = u.query.get("id").get
