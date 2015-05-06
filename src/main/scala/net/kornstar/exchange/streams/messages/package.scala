@@ -22,5 +22,12 @@ package object messages {
     )( (amount:Int,price:Double,isBid:Boolean) => {
     Order(id.getAndIncrement,System.currentTimeMillis(),isBid,amount,price)
   } )
+  implicit val dataWrites:Writes[Order] = (
+    (JsPath \ "id").write[Int] and
+    (JsPath \ "amount").write[Int] and
+      (JsPath \ "price").write[Double] and
+      (JsPath \ "isBid").write[Boolean]
+  )(o => (o.id,o.amount,o.price,o.isBid))
+
 
 }

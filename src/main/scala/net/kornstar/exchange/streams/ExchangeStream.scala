@@ -21,6 +21,9 @@ import scala.concurrent.Future
 import net.kornstar.exchange.streams.messages._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
+
+import scala.util.{Failure, Success, Try}
+
 /**
  * Created by Ben Kornmeier on 5/4/2015.
  */
@@ -48,16 +51,31 @@ object ExchangeStream {
             }.flatMap{
               case (headers,data) =>
                 orderBookActor.ask(ActorSubscriberMessage.OnNext(PlaceOrder(data))).mapTo[Int]
+            }.map{id =>
+              HttpResponse(200, entity = id.toString)
             }
           case e@HttpRequest(DELETE, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
             val id = u.query.get("id").get
-            orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Int]
-
-
+            logger.debug(s"delete ID: ${id}")
+            orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Try[Order]].map{
+              case Success(o) =>
+                val jsonString = Json.toJson(o)(dataWrites).toString()
+                HttpResponse(200,entity = jsonString)
+              case Failure(e) =>
+                HttpResponse(400, entity = "Order not found")
+            }
+          case e@HttpRequest(GET, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
+            val id = u.query.get("id").get
+            logger.debug(s"get ID: ${id}")
+            orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Option[Order]].map {
+              case Some(o) =>
+                val jsonString = Json.toJson(o)(dataWrites).toString()
+                HttpResponse(200,entity = jsonString)
+              case None =>
+                HttpResponse(400, entity = "Order not found")
+            }
           case e: HttpRequest =>
-            Future.failed(new Exception("404")) //(GET,Seq.empty[HttpHeader],ByteString.empty))
-        } map {i =>
-          HttpResponse(200, entity = i.toString)
+            Future(HttpResponse(400))
         }
       }
     }).run()

@@ -83,9 +83,9 @@ object OrderBook {
       val potentialAsk = asks.find(_.id == id)
 
       if(potentialAsk.isDefined) {
-        cancel(potentialAsk.get)
+        Try{potentialAsk.get}.flatMap(cancel(_))
       } else {
-        cancel(potentialBid.get)
+        Try{potentialBid.get}.flatMap(cancel(_))
       }
     }
 
