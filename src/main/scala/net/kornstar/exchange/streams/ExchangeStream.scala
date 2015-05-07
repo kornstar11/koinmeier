@@ -15,8 +15,7 @@ import net.kornstar.exchange.collection.OrderBook
 import net.kornstar.exchange.collection.Order
 import net.kornstar.exchange.streams.OrderBookActor.Message.{GetMarket, CancelOrder, PlaceOrder}
 import play.api.libs.json.Json
-import scala.concurrent.ExecutionContext.Implicits.global
-import org.slf4j.Logger
+//import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.LoggerFactory
 import scala.concurrent.Future
 import net.kornstar.exchange.streams.messages._
@@ -36,6 +35,7 @@ object ExchangeStream {
   val logger = LoggerFactory.getLogger("ExchangeStream")
 
   def apply()(implicit system:ActorSystem,materializer: ActorFlowMaterializer) = {
+    implicit val exeCtx = system.dispatcher
     val orderBookActor = system.actorOf(Props[OrderBookActor])
     val serverSource: Source[Http.IncomingConnection, Future[Http.ServerBinding]] =
       Http(system).bind(interface = "127.0.0.1", port = 8081)
