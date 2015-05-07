@@ -26,6 +26,9 @@ object OrderBook {
   def bidSet = SortedSet.empty[Order](bidOrdering) //Highest first (buy)
 
   case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],fullFilledOrders:List[Order] = List.empty[Order]) {
+    val ask:Option[Double] = asks.headOption.map(_.price)
+    val bid:Option[Double] = bids.headOption.map(_.price)
+    val last:Option[Double] = fullFilledOrders.headOption.map(_.price)
 
     def submit(o:Order) = {
       lazy val settlingTime = System.currentTimeMillis()
