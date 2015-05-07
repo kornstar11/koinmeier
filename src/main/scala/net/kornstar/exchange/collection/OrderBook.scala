@@ -1,5 +1,6 @@
 package net.kornstar.exchange.collection
 
+import net.kornstar.exchange.streams.messages.OrderBookStats
 import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
@@ -25,10 +26,12 @@ object OrderBook {
   def askSet = SortedSet.empty[Order](askOrdering) //Lowest first (sell)
   def bidSet = SortedSet.empty[Order](bidOrdering) //Highest first (buy)
 
-  case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],fullFilledOrders:List[Order] = List.empty[Order]) {
-    val ask:Option[Double] = asks.headOption.map(_.price)
-    val bid:Option[Double] = bids.headOption.map(_.price)
-    val last:Option[Double] = fullFilledOrders.headOption.map(_.price)
+
+  case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],fullFilledOrders:List[Order] = List.empty[Order],lastOrder:Option[Order] = None) {
+    val ask:Option[Order] = asks.headOption
+    val bid:Option[Order] = bids.headOption
+    val last = lastOrder
+    val market = OrderBookStats(ask,bid,last)
 
     def submit(o:Order) = {
       lazy val settlingTime = System.currentTimeMillis()
@@ -57,12 +60,12 @@ object OrderBook {
             if(mostQuantityOrder.remainingAmount > 0){
               logger.debug(s"${mostQuantityOrder} still has remaining.")
               if(mostQuantityOrder.isBid) {
-                _match(ob.copy(bids = ob.bids.tail + mostQuantityOrder,asks = ob.asks.tail,fullFilledOrders = leastQuantityOrder :: ob.fullFilledOrders))
+                _match(ob.copy(bids = ob.bids.tail + mostQuantityOrder,asks = ob.asks.tail,fullFilledOrders = leastQuantityOrder :: ob.fullFilledOrders,lastOrder = Some(leastQuantityOrder)))
               } else {
-                _match(ob.copy(bids = ob.bids.tail ,asks = ob.asks.tail + mostQuantityOrder,fullFilledOrders = leastQuantityOrder :: ob.fullFilledOrders))
+                _match(ob.copy(bids = ob.bids.tail ,asks = ob.asks.tail + mostQuantityOrder,fullFilledOrders = leastQuantityOrder :: ob.fullFilledOrders, lastOrder = Some(leastQuantityOrder)))
               }
             } else {
-              _match(ob.copy(bids = ob.bids.tail,asks = ob.asks.tail,fullFilledOrders = mostQuantityOrder.copy(timeSettled = Some(settlingTime)) :: leastQuantityOrder :: fullFilledOrders))
+              _match(ob.copy(bids = ob.bids.tail,asks = ob.asks.tail,fullFilledOrders = mostQuantityOrder.copy(timeSettled = Some(settlingTime)) :: leastQuantityOrder :: fullFilledOrders,lastOrder = Some(mostQuantityOrder)))
             }
           } else {
             logger.debug(s"No intersection")

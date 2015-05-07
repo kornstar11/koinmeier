@@ -13,7 +13,7 @@ import akka.stream.scaladsl.{ Flow, Sink }
 import akka.util.ByteString
 import net.kornstar.exchange.collection.OrderBook
 import net.kornstar.exchange.collection.Order
-import net.kornstar.exchange.streams.OrderBookActor.Message.{CancelOrder, PlaceOrder}
+import net.kornstar.exchange.streams.OrderBookActor.Message.{GetMarket, CancelOrder, PlaceOrder}
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.Logger
@@ -29,12 +29,16 @@ import scala.util.{Failure, Success, Try}
  * Created by Ben Kornmeier on 5/4/2015.
  */
 object ExchangeStream {
+  implicit val timeout = Timeout(5L,TimeUnit.SECONDS)
+
+  val notFound = HttpResponse(400, entity = HttpEntity(MediaTypes.`application/javascript`,Json.toJson(JsonError("not found")).toString()))
+
   val logger = LoggerFactory.getLogger("ExchangeStream")
-  implicit val timeout = Timeout(1L,TimeUnit.SECONDS)
+
   def apply()(implicit system:ActorSystem,materializer: ActorFlowMaterializer) = {
     val orderBookActor = system.actorOf(Props[OrderBookActor])
     val serverSource: Source[Http.IncomingConnection, Future[Http.ServerBinding]] =
-      Http(system).bind(interface = "", port = 8081)
+      Http(system).bind(interface = "127.0.0.1", port = 8081)
 
     val bindingFuture: Future[Http.ServerBinding] =serverSource.to(Sink.foreach { connection =>
       logger.info("Accepted new connection from " + connection.remoteAddress)
@@ -53,30 +57,36 @@ object ExchangeStream {
               case (headers,data) =>
                 orderBookActor.ask(ActorSubscriberMessage.OnNext(PlaceOrder(data))).mapTo[Order]
             }.map{o =>
-              HttpResponse(200, entity = Json.toJson(o)(dataWrites).toString())
+              val jsonString = Json.toJson(o).toString()
+              HttpResponse(200,entity = HttpEntity(MediaTypes.`application/javascript`,jsonString))
             }
           case e@HttpRequest(DELETE, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
             val id = u.query.get("id").get
             logger.debug(s"delete ID: ${id}")
             orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Option[Order]].map{
               case Some(o) =>
-                val jsonString = Json.toJson(o)(dataWrites).toString()
-                HttpResponse(200,entity = jsonString)
+                val jsonString = Json.toJson(o).toString()
+                HttpResponse(200,entity = HttpEntity(MediaTypes.`application/javascript`,jsonString))
               case None =>
-                HttpResponse(400, entity = "Order not found")
+                notFound
             }
           case e@HttpRequest(GET, u@Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
             val id = u.query.get("id").get
             logger.debug(s"get ID: ${id}")
             orderBookActor.ask(ActorSubscriberMessage.OnNext(CancelOrder(id.toInt))).mapTo[Option[Order]].map {
               case Some(o) =>
-                val jsonString = Json.toJson(o)(dataWrites).toString()
-                HttpResponse(200,entity = jsonString)
+                val jsonString = Json.toJson(o).toString()
+                HttpResponse(200,entity = HttpEntity(MediaTypes.`application/javascript`,jsonString))
               case None =>
-                HttpResponse(400, entity = "Order not found")
+                notFound
+            }
+          case e@HttpRequest(GET, u@Uri.Path("/market"), headers, rEntity:RequestEntity, _) =>
+            orderBookActor.ask(ActorSubscriberMessage.OnNext(GetMarket)).mapTo[OrderBookStats].map {obs =>
+              val jsonString = Json.toJson(obs).toString()
+              HttpResponse(200, entity = HttpEntity(MediaTypes.`application/javascript`,jsonString))
             }
           case e: HttpRequest =>
-            Future(HttpResponse(400))
+            Future(notFound)
         }
       }
     }).run()
