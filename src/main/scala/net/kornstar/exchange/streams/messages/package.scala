@@ -2,8 +2,7 @@ package net.kornstar.exchange.streams
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import net.kornstar.exchange.collection.OrderBook
-import OrderBook.Order
+import net.kornstar.exchange.collection.{OrderBook, Order}
 import play.api.libs.json._ // JSON library
 import play.api.libs.json.Reads._ // Custom validation helpers
 import play.api.libs.functional.syntax._

@@ -1,6 +1,7 @@
 package net.kornstar.exchange
 
 import net.kornstar.exchange.collection.OrderBook
+import net.kornstar.exchange.collection.Order
 import org.specs2.mutable.Specification
 
 /**
@@ -10,8 +11,8 @@ class OrderBookTest extends Specification {
   sequential
   "OrderBookTest" should {
     "bids and asks should be ordered right" in {
-      val bids = OrderBook.bidSet + (OrderBook.Order(0,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0), OrderBook.Order(4,1L,true,1,2.0),OrderBook.Order(5,1L,true,1,1.1) )
-      val asks = OrderBook.askSet + (OrderBook.Order(2,1L,true,1,1.1), OrderBook.Order(3,1L,true,1,2.0))
+      val bids = OrderBook.bidSet + (Order(0,1L,true,1,1.1), Order(1,1L,true,1,2.0), Order(4,1L,true,1,2.0),Order(5,1L,true,1,1.1) )
+      val asks = OrderBook.askSet + (Order(2,1L,true,1,1.1), Order(3,1L,true,1,2.0))
       println("")
       println(s"BIDS====${bids}")
 
@@ -21,8 +22,8 @@ class OrderBookTest extends Specification {
     }
 
     "not match a order when there is a spread" in {
-      val bids = IndexedSeq(OrderBook.Order(0,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0))
-      val asks = IndexedSeq(OrderBook.Order(2,1L,false,1,3.1), OrderBook.Order(3,1L,false,1,4.0))
+      val bids = IndexedSeq(Order(0,1L,true,1,1.1), Order(1,1L,true,1,2.0))
+      val asks = IndexedSeq(Order(2,1L,false,1,3.1), Order(3,1L,false,1,4.0))
 
       val orderBook = OrderBook(1)
       val ordersIn1 = orderBook.submit(bids(0)).submit(asks(0)).submit(bids(1)).submit(asks(1))
@@ -36,8 +37,8 @@ class OrderBookTest extends Specification {
       ordersIn1.asks.contains(asks(1)) must be equalTo(true)
     }
     "match a exact order and remove from the orderBook" in {
-      val bids = IndexedSeq(OrderBook.Order(0,1L,true,1,1.1), OrderBook.Order(1,1L,true,1,2.0), OrderBook.Order(2,1L,true,1,2.1),OrderBook.Order(4,1L,true,1,3.1)  )
-      val asks = IndexedSeq(OrderBook.Order(5,1L,false,1,3.1), OrderBook.Order(6,1L,false,1,4.0))
+      val bids = IndexedSeq(Order(0,1L,true,1,1.1), Order(1,1L,true,1,2.0), Order(2,1L,true,1,2.1),Order(4,1L,true,1,3.1)  )
+      val asks = IndexedSeq(Order(5,1L,false,1,3.1), Order(6,1L,false,1,4.0))
 
       val orderBook = OrderBook(1)
       val ordersIn1 = orderBook.submit(bids(0)).submit(asks(0)).submit(bids(1)).submit(asks(1)).submit(bids(2))
@@ -52,8 +53,8 @@ class OrderBookTest extends Specification {
     }
 
     "match a 2 order that make it exact" in {
-      val bids = IndexedSeq(OrderBook.Order(1,1L,true,1,1.1), OrderBook.Order(2,1L,true,1,2.0), OrderBook.Order(3,1L,true,1,3.1),OrderBook.Order(4,1L,true,1,3.1)  )
-      val asks = IndexedSeq(OrderBook.Order(5,1L,false,2,3.1), OrderBook.Order(6,1L,false,1,4.0))
+      val bids = IndexedSeq(Order(1,1L,true,1,1.1), Order(2,1L,true,1,2.0), Order(3,1L,true,1,3.1),Order(4,1L,true,1,3.1)  )
+      val asks = IndexedSeq(Order(5,1L,false,2,3.1), Order(6,1L,false,1,4.0))
 
       val orderBook = OrderBook(1)
       val ordersIn1 = orderBook.submit(bids(0)).submit(asks(0)).submit(bids(1)).submit(asks(1)).submit(bids(2))
@@ -61,7 +62,7 @@ class OrderBookTest extends Specification {
       ordersIn1.fullFilledOrders.isEmpty must be equalTo(false)
       ordersIn1.fullFilledOrders.count(_.id == 3) mustEqual(1)
       ordersIn1.bids.count(_.id == 3) mustEqual(0)
-      val clearedOrderBook = ordersIn1.copy(fullFilledOrders = List.empty[OrderBook.Order])
+      val clearedOrderBook = ordersIn1.copy(fullFilledOrders = List.empty[Order])
 
       val ordersIn2 = clearedOrderBook.submit(bids(3))
       println(ordersIn2)

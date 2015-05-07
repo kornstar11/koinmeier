@@ -25,17 +25,6 @@ object OrderBook {
   def askSet = SortedSet.empty[Order](askOrdering) //Lowest first (sell)
   def bidSet = SortedSet.empty[Order](bidOrdering) //Highest first (buy)
 
-
-  case class Order(id:Int,timeCreated:Long,isBid:Boolean,amount:Int,remainingAmount:Int,price:Double,settledPrice:Double = 0.0,timeSettled:Option[Long] = None){
-    def hashcode:Int = id
-  }
-
-  object Order {
-    def apply(id:Int,timeCreated:Long,isBid:Boolean,amount:Int,price:Double):Order = {
-      Order(id,timeCreated,isBid,amount,amount,price)
-    }
-  }
-  //TODO use SortedMap id -> Order
   case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],fullFilledOrders:List[Order] = List.empty[Order]) {
 
     def submit(o:Order) = {

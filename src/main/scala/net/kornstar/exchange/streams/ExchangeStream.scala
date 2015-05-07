@@ -12,7 +12,7 @@ import akka.http.scaladsl.model.HttpMethods._
 import akka.stream.scaladsl.{ Flow, Sink }
 import akka.util.ByteString
 import net.kornstar.exchange.collection.OrderBook
-import OrderBook.Order
+import net.kornstar.exchange.collection.Order
 import net.kornstar.exchange.streams.OrderBookActor.Message.{CancelOrder, PlaceOrder}
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global

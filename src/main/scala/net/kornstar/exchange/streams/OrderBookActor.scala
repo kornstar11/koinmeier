@@ -4,7 +4,8 @@ import akka.actor.{ActorLogging, Actor}
 import akka.stream.actor.{ActorSubscriberMessage, OneByOneRequestStrategy, ActorPublisher, ActorSubscriber}
 import net.kornstar.exchange.collection.{OrderBook =>OB}
 import net.kornstar.exchange.streams.OrderBookActor.Message.{GetOrder, CancelOrder, PlaceOrder}
-import net.kornstar.exchange.collection.OrderBook.{OrderBook, Order}
+import net.kornstar.exchange.collection.OrderBook.OrderBook
+import net.kornstar.exchange.collection.Order
 import net.kornstar.exchange.streams.messages.Tick
 import scala.concurrent.duration._
 
