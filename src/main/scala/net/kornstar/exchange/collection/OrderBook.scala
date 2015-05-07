@@ -36,13 +36,13 @@ object OrderBook {
       }
 
       @tailrec //TODO refactor to just take OrderBook
-      def _match(bids:SortedSet[Order],asks:SortedSet[Order],fullFilledOrders:List[Order]):OrderBook = {
-        val topBidOpt = bids.headOption
-        val topAskOpt = asks.headOption
+      def _match(ob:OrderBook):OrderBook = {
+        val topBidOpt = ob.bids.headOption
+        val topAskOpt = ob.asks.headOption
 
         if(topBidOpt.isEmpty || topAskOpt.isEmpty) {
           logger.debug(s"One or more sets are empty")
-          this.copy(bids = bids,asks = asks,fullFilledOrders = fullFilledOrders)
+          ob
         } else {
           val topBid = topBidOpt.get
           val topAsk = topAskOpt.get
@@ -54,20 +54,20 @@ object OrderBook {
             if(mostQuantityOrder.remainingAmount > 0){
               logger.debug(s"${mostQuantityOrder} still has remaining.")
               if(mostQuantityOrder.isBid) {
-                _match(bids.tail + mostQuantityOrder,asks.tail,leastQuantityOrder :: fullFilledOrders)
+                _match(ob.copy(bids = ob.bids.tail + mostQuantityOrder,asks = ob.asks.tail,fullFilledOrders = leastQuantityOrder :: ob.fullFilledOrders))
               } else {
-                _match(bids.tail ,asks.tail + mostQuantityOrder,leastQuantityOrder :: fullFilledOrders)
+                _match(ob.copy(bids = ob.bids.tail ,asks = ob.asks.tail + mostQuantityOrder,fullFilledOrders = leastQuantityOrder :: ob.fullFilledOrders))
               }
             } else {
-              _match(bids.tail,asks.tail,mostQuantityOrder.copy(timeSettled = Some(settlingTime)) :: leastQuantityOrder :: fullFilledOrders)
+              _match(ob.copy(bids = ob.bids.tail,asks = ob.asks.tail,fullFilledOrders = mostQuantityOrder.copy(timeSettled = Some(settlingTime)) :: leastQuantityOrder :: fullFilledOrders))
             }
           } else {
             logger.debug(s"No intersection")
-            this.copy(bids = bids,asks = asks,fullFilledOrders = fullFilledOrders)
+            ob
           }
         }
       }
-      _match(newBidSet,newAskSet,fullFilledOrders)
+      _match(this.copy(bids = newBidSet,asks = newAskSet))
     }
 
     def cancel(id:Int):(OrderBook,Option[Order]) = { //TODO check and make sure the Order is not already partialy filled
