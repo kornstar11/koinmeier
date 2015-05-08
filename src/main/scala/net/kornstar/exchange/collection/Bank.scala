@@ -1,6 +1,10 @@
 package net.kornstar.exchange.collection
 
 import org.slf4j.LoggerFactory
+import com.typesafe.config._
+import net.kornstar.exchange.global._
+
+import scala.util.Try
 
 /**
  * Created by Ben Kornmeier on 5/7/2015.
@@ -22,9 +26,21 @@ trait Account {
   def otherCurrencyAmount:Double
 
   def submitTransaction(t:Transaction):Account
+
+  def userId:Int
+
 }
 
-case class MemoryAccount(userId:Int,ledger:Seq[Transaction] = Seq.empty[Transaction]) extends Account {
+object Account {
+  def apply(userId:Int):Account = {
+    Try(config.getString("account-type")).getOrElse("memory") match {
+      case "memory" => new MemoryAccount(userId)
+      case _ => throw new IllegalArgumentException("Unknown account type.")
+    }
+  }
+}
+
+case class MemoryAccount(val userId:Int,ledger:Seq[Transaction] = Seq.empty[Transaction]) extends Account {
   private def sumLedger(isBase:Boolean):Double = {
     ledger.foldLeft(0.0) {
       case (acc,ele) if isBase =>
@@ -45,8 +61,17 @@ case class MemoryAccount(userId:Int,ledger:Seq[Transaction] = Seq.empty[Transact
 }
 trait Bank {
   def getAccountFor(userId:Int):Option[Account]
+
+  def submitTransaction(t:Transaction):Bank
 }
 object Bank {
+  def apply():Bank = {
+    Try(config.getString("bank-type")).getOrElse("memory") match {
+      case "memory" => new MemoryBank()
+      case _ => throw new IllegalArgumentException("Unknown bank type.")
+    }
+  }
+
   val logger = LoggerFactory.getLogger(classOf[Bank])
 }
 class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) extends Bank {
@@ -59,8 +84,7 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
     getAccountFor(t.userId).map{acct =>
       new MemoryBank(userIdToAccount + (t.userId -> acct.submitTransaction(t)))
     } getOrElse{
-      logger.warn(s"Transaction user ID not found ${t}")
-      this
+      new MemoryBank(userIdToAccount + (t.userId -> Account(t.userId).submitTransaction(t)))
     }
   }
 
