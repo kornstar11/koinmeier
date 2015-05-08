@@ -1,7 +1,6 @@
 package net.kornstar.exchange.collection
 
 import org.slf4j.LoggerFactory
-import com.typesafe.config._
 import net.kornstar.exchange.global._
 
 import scala.util.Try

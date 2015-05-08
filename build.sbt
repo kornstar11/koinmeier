@@ -25,3 +25,5 @@ libraryDependencies += "com.typesafe.akka" % "akka-http-scala-experimental_2.11"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVer
+
+javacOptions += "-XX:+UnlockCommercialFeatures -XX:+FlightRecorder"
