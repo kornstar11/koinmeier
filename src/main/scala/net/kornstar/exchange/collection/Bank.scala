@@ -12,7 +12,6 @@ import scala.util.Try
  * Created by Ben Kornmeier on 5/7/2015.
  */
 
-
 trait Bank {
   def getAccountFor(userId:Int):Option[Account]
 
@@ -28,6 +27,8 @@ trait Bank {
 
 }
 object Bank {
+  val logger = LoggerFactory.getLogger(classOf[Bank])
+
   def apply():Bank = {
     Try(config.getString("bank-type")).getOrElse("memory") match {
       case "memory" => new MemoryBank()
@@ -35,7 +36,6 @@ object Bank {
     }
   }
 
-  val logger = LoggerFactory.getLogger(classOf[Bank])
 }
 class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) extends Bank {
   import Bank._
