@@ -12,10 +12,15 @@ import play.api.libs.functional.syntax._
  */
 package object messages { //TODO Order goes here
   case object Tick
-  case class OrderBookStats(ask:Option[Order] = None,bid:Option[Order] = None, last:Option[Order] = None) {
-  }
+  case class OrderBookStats(ask:Option[Order] = None,bid:Option[Order] = None, last:Option[Order] = None)
+  case class Deposit(userId:Int,amount:Double,isBase:Boolean)
   case class JsonError(error:String)
 
+  implicit val depositReads:Reads[Deposit] = (
+    (JsPath \ "userId").read[Int] and
+      (JsPath \ "amount").read[Double] and
+      (JsPath \ "isBase").read[Boolean]
+    )( (userId:Int,amount:Double,isBase:Boolean) => Deposit(userId,amount,isBase) )
 
   implicit val orderReads:Reads[Order] = (
     (JsPath \ "userId").read[Int] and

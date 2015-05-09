@@ -17,6 +17,11 @@ trait Exchange {
   def market:OrderBookStats
   def bank:Bank
   def openOrders(userId:Int):Iterable[Order]
+  def openOrders:Iterable[Order]
+
+  def depositBaseCurrency(userId:Int,depositAmount:Double):Exchange
+
+  def depositOtherCurrency(userId:Int,depositAmount:Int):Exchange
 
 
 }
@@ -45,9 +50,23 @@ class MemoryExchange(orderBook:OrderBook = OrderBook(0),val bank:Bank = Bank()) 
   }
 
   def openOrders(userId:Int):Iterable[Order] = {
-    orderBook.asks.filter(_.userId == userId).toSeq ++ orderBook.bids.filter(_.userId == userId).toSeq
+    openOrders.filter(_.userId == userId)
   }
 
+  def depositBaseCurrency(userId:Int,depositAmount:Double):Exchange = {
+    val newBank = bank.depositBaseCurrency(userId,depositAmount)
+    new MemoryExchange(orderBook,newBank)
+  }
+
+  def depositOtherCurrency(userId:Int,depositAmount:Int):Exchange = {
+    val newBank = bank.depositBaseCurrency(userId,depositAmount)
+    new MemoryExchange(orderBook,newBank)
+  }
+
+  def openOrders:Iterable[Order] = orderBook.asks.toSeq ++ orderBook.bids.toSeq
+
   val market = orderBook.market
+
+
 
 }

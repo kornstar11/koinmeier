@@ -13,7 +13,7 @@ import akka.stream.scaladsl.{ Flow, Sink }
 import akka.util.ByteString
 import net.kornstar.exchange.collection.OrderBook
 import net.kornstar.exchange.collection.Order
-import net.kornstar.exchange.streams.OrderBookActor.Message.{GetMarket, CancelOrder, PlaceOrder}
+import net.kornstar.exchange.streams.OrderBookActor.Message.{PlaceDeposit, GetMarket, CancelOrder, PlaceOrder}
 import play.api.libs.json.Json
 //import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.LoggerFactory
@@ -45,6 +45,20 @@ object ExchangeStream {
 
       connection handleWith {
         Flow[HttpRequest].mapAsync(3) {
+          case e@HttpRequest(POST, Uri.Path("/bank"), headers, rEntity:RequestEntity, _) =>
+            rEntity.dataBytes.runFold(ByteString.empty){
+              case (acc,b) =>
+                acc ++ b
+            }.map{b =>
+              val j = Json.parse(b.toArray).as[Deposit]//b.toArray
+              (headers.seq,j)
+            }.flatMap{
+              case (headers,data) =>
+                orderBookActor.ask(ActorSubscriberMessage.OnNext(PlaceDeposit(data))).mapTo[Unit]
+            }.map{o =>
+              HttpResponse(200,entity = HttpEntity(MediaTypes.`application/javascript`,""))
+            }
+
           case e@HttpRequest(POST, Uri.Path("/order"), headers, rEntity:RequestEntity, _) =>
             logger.info(s"Req: ${e}")
             rEntity.dataBytes.runFold(ByteString.empty){

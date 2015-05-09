@@ -2,9 +2,9 @@ package net.kornstar.exchange.streams
 
 import akka.actor.{ActorLogging, Actor}
 import akka.stream.actor.{ActorSubscriberMessage, OneByOneRequestStrategy, ActorPublisher, ActorSubscriber}
-import net.kornstar.exchange.streams.OrderBookActor.Message.{GetMarket, GetOrder, CancelOrder, PlaceOrder}
+import net.kornstar.exchange.streams.OrderBookActor.Message._
 import net.kornstar.exchange.collection.{Exchange, OrderBook, Order}
-import net.kornstar.exchange.streams.messages.Tick
+import net.kornstar.exchange.streams.messages.{Deposit, Tick}
 import scala.concurrent.duration._
 
 import scala.util.{Failure, Success, Try}
@@ -21,6 +21,8 @@ object OrderBookActor {
     case object GetOrderBook extends Message
     case object GetMarket extends Message
 
+    case class PlaceDeposit(d:Deposit) extends Message
+
   }
 }
 class OrderBookActor extends Actor with ActorLogging {
@@ -36,6 +38,9 @@ class OrderBookActor extends Actor with ActorLogging {
   }
 
   def running(e:Exchange ):Receive = {
+    case ActorSubscriberMessage.OnNext(PlaceDeposit(d)) =>
+      become(running(e.depositBaseCurrency(d.userId,d.amount)))
+      sender() ! ()
     case ActorSubscriberMessage.OnNext(PlaceOrder(o)) =>
       val (ex,newOrder) = e.placeOrder(o.userId,o.price,o.amount,o.isBid)
       become(running(ex))
@@ -54,6 +59,7 @@ class OrderBookActor extends Actor with ActorLogging {
       sender() ! e.market
 
     case Tick =>
+      log.info(s"Exchange stats: ${e.market} \n ${e.openOrders}")
       /*
       log.info(s"New fullfilled orders: ${e..fullFilledOrders}")
       log.info(s"Asks: ${ob.asks}")

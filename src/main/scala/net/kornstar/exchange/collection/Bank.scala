@@ -55,10 +55,12 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
   }
 
   def depositBaseCurrency(userId:Int,depositAmount:Double):Bank = {
+    logger.info(s"Depositing base ${userId} -> ${depositAmount}")
     submitTransaction(Transaction(userId = userId,baseCurrencyAmount = depositAmount,otherCurrencyAmount = 0,transactionType = TransactionType.Deposit))
   }
 
   def depositOtherCurrency(userId:Int,depositAmount:Int):Bank = {
+    logger.info(s"Depositing other ${userId} -> ${depositAmount}")
     submitTransaction(Transaction(userId = userId,baseCurrencyAmount = 0.0,otherCurrencyAmount = depositAmount,transactionType = TransactionType.Deposit))
   }
 
