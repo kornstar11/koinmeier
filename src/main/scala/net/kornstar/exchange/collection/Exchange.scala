@@ -10,19 +10,21 @@ object Exchange {
   val logger = LoggerFactory.getLogger(classOf[Exchange])
 }
 trait Exchange {
-  def placeOrder(userId:Int,assetId:Int,price:Double,amount:Int,isBid:Boolean):(Exchange,Order)
+  def placeOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Exchange,Order)
   def cancelOrder(userId:Int,orderId:Int):(Exchange,Option[Order])
   def market:OrderBookStats
+  def bank:Bank
   def openOrders(userId:Int):Iterable[Order]
 
+
 }
-class MemoryExchange(orderBook:OrderBook = OrderBook(0),bank:Bank = Bank()) extends Exchange {
+class MemoryExchange(orderBook:OrderBook = OrderBook(0),val bank:Bank = Bank()) extends Exchange {
   import Exchange._
-  def placeOrder(userId:Int,assetId:Int,price:Double,amount:Int,isBid:Boolean):(Exchange,Order) = {
+  def placeOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Exchange,Order) = {
     val (newBank,order) = bank.createOrder(userId,price,amount,isBid)
     val newOrderBook = orderBook.submit(order)
 
-    (new MemoryExchange(newOrderBook,newBank)) -> order
+    new MemoryExchange(newOrderBook,newBank) -> order
   }
 
   def cancelOrder(userId:Int,orderId:Int):(Exchange,Option[Order]) = {
