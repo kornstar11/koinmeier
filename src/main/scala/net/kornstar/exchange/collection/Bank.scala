@@ -137,10 +137,13 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
   def depositOtherCurrency(userId:Int,depositAmount:Int):Bank = {
     submitTransaction(Transaction(userId = userId,baseCurrencyAmount = 0.0,otherCurrencyAmount = depositAmount,transactionType = TransactionType.Deposit))
   }
+
   def createOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Bank,Order) = {
     val acct = userIdToAccount.getOrElse(userId,Account(userId))
 
     val (newAcct,order) = acct.createOrder(price,amount,isBid)
+
+    logger.debug(s"UserID ${userId} creating a new account and order ${newAcct} -> ${order} ")
 
     val newBank = new MemoryBank(userIdToAccount + (userId -> newAcct))
 
