@@ -16,7 +16,6 @@ package object messages { //TODO Order goes here
   }
   case class JsonError(error:String)
 
-  val id = new AtomicInteger(0)
 
   implicit val orderReads:Reads[Order] = (
     (JsPath \ "userId").read[Int] and
@@ -24,7 +23,7 @@ package object messages { //TODO Order goes here
       (JsPath \ "price").read[Double] and
       (JsPath \ "isBid").read[Boolean]
     )( (userId:Int,amount:Int,price:Double,isBid:Boolean) => {
-    Order(userId,id.getAndIncrement,System.currentTimeMillis(),isBid,amount,price)
+    Order(userId,Order.idMaker.getAndIncrement,System.currentTimeMillis(),isBid,amount,price)
   } )
   implicit val orderWrites:Writes[Order] = (
     (JsPath \ "userId").write[Int] and

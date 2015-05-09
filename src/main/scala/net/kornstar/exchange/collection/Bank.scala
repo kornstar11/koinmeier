@@ -31,6 +31,8 @@ trait Account {
 
   def submitTransaction(t:Transaction):Account
 
+  def createOrder(price:Double,amount:Int,isBid:Boolean):(Account,Order)
+
   def userId:Int
 
 }
@@ -73,6 +75,23 @@ case class MemoryAccount(val userId:Int,ledger:Seq[Transaction] = Seq.empty[Tran
     this.copy(ledger = ledger :+ tWithTime)
   }
 
+  def createOrder(price:Double,amount:Int,isBid:Boolean):(Account,Order) = {
+    val amountInDrawedFromLedger = if(isBid) baseCurrencyAmount
+                               else otherCurrencyAmount
+
+    val proposedTotalPrice = price * amount.toDouble
+
+    assert(proposedTotalPrice <= amountInDrawedFromLedger, s"unable to make a order of ${proposedTotalPrice} because only ${amountInDrawedFromLedger} is avialiable.")
+
+    val newAcct = if(isBid) submitTransaction(Transaction(userId,proposedTotalPrice * -1.0,0,TransactionType.Buy,Some(System.currentTimeMillis()),Some(idMaker.getAndIncrement)))
+                  else submitTransaction(Transaction(userId, 0.0, (proposedTotalPrice * -1.0).toInt, TransactionType.Sell, Some(System.currentTimeMillis()), Some(idMaker.getAndIncrement)))
+
+    val order = Order(userId,isBid,amount,price)
+
+    newAcct -> order
+
+  }
+
 }
 trait Bank {
   def getAccountFor(userId:Int):Option[Account]
@@ -84,6 +103,8 @@ trait Bank {
   def depositOtherCurrency(userId:Int,depositAmount:Int):Bank
 
   def settleOrders(order1:Order,order2:Order):Bank
+
+  def createOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Bank,Order)
 
 }
 object Bank {
@@ -115,6 +136,15 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
 
   def depositOtherCurrency(userId:Int,depositAmount:Int):Bank = {
     submitTransaction(Transaction(userId = userId,baseCurrencyAmount = 0.0,otherCurrencyAmount = depositAmount,transactionType = TransactionType.Deposit))
+  }
+  def createOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Bank,Order) = {
+    val acct = userIdToAccount.getOrElse(userId,Account(userId))
+
+    val (newAcct,order) = acct.createOrder(price,amount,isBid)
+
+    val newBank = new MemoryBank(userIdToAccount + (userId -> newAcct))
+
+    newBank -> order
   }
 
   def settleOrders(order1:Order,order2:Order):Bank = {
