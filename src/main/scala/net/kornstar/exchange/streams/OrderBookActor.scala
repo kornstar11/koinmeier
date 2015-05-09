@@ -38,13 +38,19 @@ class OrderBookActor extends Actor with ActorLogging {
   }
 
   def running(e:Exchange ):Receive = {
-    case ActorSubscriberMessage.OnNext(PlaceDeposit(d)) =>
+    case ActorSubscriberMessage.OnNext(PlaceDeposit(d)) if d.isBase =>
       become(running(e.depositBaseCurrency(d.userId,d.amount)))
       sender() ! ()
+
+    case ActorSubscriberMessage.OnNext(PlaceDeposit(d)) =>
+      become(running(e.depositOtherCurrency(d.userId,d.amount.toInt)))
+      sender() ! ()
+
     case ActorSubscriberMessage.OnNext(PlaceOrder(o)) =>
       val (ex,newOrder) = e.placeOrder(o.userId,o.price,o.amount,o.isBid)
       become(running(ex))
       sender() ! newOrder
+
     case ActorSubscriberMessage.OnNext(CancelOrder(id)) =>
       val (ex,orderOpt) = e.cancelOrder(id)
       become(running(ex))
