@@ -10,6 +10,7 @@ object Transaction {
     case object Withdraw extends TransactionType
     case object Buy extends TransactionType
     case object Sell extends TransactionType
+    case class Refund(o:Order) extends TransactionType
   }
 }
 

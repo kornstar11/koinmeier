@@ -21,6 +21,8 @@ trait Account {
 
   def createOrder(price:Double,amount:Int,isBid:Boolean):(Account,Order)
 
+  def refundOrder(order:Order):Account
+
   def userId:Int
 
 }
@@ -78,6 +80,19 @@ case class MemoryAccount(val userId:Int,ledger:Seq[Transaction] = Seq.empty[Tran
 
     newAcct -> order
 
+  }
+
+  def refundOrder(order:Order):Account = {
+    assert(order.settledAmount == 0,"Whoa! big bug!!")
+    val refundAmount = order.amount.toDouble * order.price
+
+    val transaction = if(order.isBid) {
+      Transaction(order.userId,baseCurrencyAmount = refundAmount,0,TransactionType.Refund(order))
+    } else {
+      Transaction(order.userId,baseCurrencyAmount =0 ,refundAmount.toInt,TransactionType.Refund(order))
+    }
+
+    submitTransaction(transaction)
   }
 
 }

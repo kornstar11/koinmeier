@@ -25,6 +25,8 @@ trait Bank {
 
   def createOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Bank,Order)
 
+  def refundOrder(order:Order):Bank
+
 }
 object Bank {
   val logger = LoggerFactory.getLogger(classOf[Bank])
@@ -92,6 +94,11 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
     val updatedAskAcct = askAcct.submitTransaction(Transaction(askAcct.userId,baseCurrencyAmount = askTotalAmount,otherCurrencyAmount = askOrder.amount * -1,transactionType = TransactionType.Sell, orderOpt = Some(askOrder)))
 
     new MemoryBank(userIdToAccount + (bidOrder.userId -> updatedBidAcct, askOrder.userId -> updatedAskAcct))
+  }
+
+  def refundOrder(order:Order):Bank = {
+    val acct = userIdToAccount(order.userId).refundOrder(order)
+    new MemoryBank(userIdToAccount + (order.userId -> acct))
   }
 
 

@@ -1,0 +1,44 @@
+package net.kornstar.exchange.collection
+
+import net.kornstar.exchange.streams.messages.OrderBookStats
+import org.slf4j.LoggerFactory
+
+/**
+ * Created by Ben Kornmeier on 5/9/2015.
+ */
+object Exchange {
+  val logger = LoggerFactory.getLogger(classOf[Exchange])
+}
+trait Exchange {
+  def placeOrder(userId:Int,assetId:Int,price:Double,amount:Int,isBid:Boolean):(Exchange,Order)
+  def cancelOrder(userId:Int,orderId:Int):(Exchange,Option[Order])
+  def market:OrderBookStats
+  def openOrders(userId:Int):Iterable[Order]
+
+}
+class MemoryExchange(orderBook:OrderBook = OrderBook(0),bank:Bank = Bank()) extends Exchange {
+  import Exchange._
+  def placeOrder(userId:Int,assetId:Int,price:Double,amount:Int,isBid:Boolean):(Exchange,Order) = {
+    val (newBank,order) = bank.createOrder(userId,price,amount,isBid)
+    val newOrderBook = orderBook.submit(order)
+
+    (new MemoryExchange(newOrderBook,newBank)) -> order
+  }
+
+  def cancelOrder(userId:Int,orderId:Int):(Exchange,Option[Order]) = {
+    val (newOrderBook,orderOpt) = orderBook.cancel(orderId)
+
+    val newBank = orderOpt.map{o =>
+      bank.refundOrder(o)
+    } getOrElse(bank)
+
+    new MemoryExchange(newOrderBook,bank) -> orderOpt
+  }
+
+  def openOrders(userId:Int):Iterable[Order] = {
+    orderBook.asks.filter(_.userId == userId).toSeq ++ orderBook.bids.filter(_.userId == userId).toSeq
+  }
+
+  val market = orderBook.market
+
+}

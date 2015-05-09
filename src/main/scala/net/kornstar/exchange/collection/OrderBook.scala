@@ -85,8 +85,9 @@ case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],ful
   }
 
   def cancel(id:Int):(OrderBook,Option[Order]) = { //TODO check and make sure the Order is not already partialy filled
-  val bidOpt = bids.find(_.id == id)
+    val bidOpt = bids.find(_.id == id)
     val askOpt = asks.find(_.id == id)
+
     if(bidOpt.isDefined) {
       val bid = bidOpt.get
       (cancel(bid),Some(bid))
