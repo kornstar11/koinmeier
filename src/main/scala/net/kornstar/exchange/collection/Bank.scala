@@ -121,10 +121,11 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
     assert((order1.isBid && !order2.isBid) || (!order1.isBid && order2.isBid), "can not have two orders be bid or two orders be ask")
     assert(order1.settledPrice == order2.settledPrice, "settlePrices must be equal.")
 
-    logger.debug(s"Attempting to settle the following orders: \n ${order1} \n ${order2}")
 
     val (bidOrder,askOrder) = if(order1.isBid) order1 -> order2
     else order2 -> order1
+
+    logger.debug(s"Attempting to settle the following orders: \n Bid: ${bidOrder} -> ${bidOrder.settledAmount} \n Ask: ${askOrder} -> ${askOrder.settledAmount}")
 
     val bidAcct = userIdToAccount.getOrElse(bidOrder.userId,Account(bidOrder.userId))
     val askAcct = userIdToAccount.getOrElse(askOrder.userId,Account(askOrder.userId))
@@ -132,8 +133,10 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
     val bidTotalAmount = bidOrder.settledAmount.toDouble * bidOrder.settledPrice
     val askTotalAmount = askOrder.settledAmount.toDouble * askOrder.settledPrice
 
-    val updatedBidAcct = bidAcct.submitTransaction(Transaction(bidAcct.userId,baseCurrencyAmount = bidTotalAmount * -1.0,otherCurrencyAmount = bidOrder.amount,transactionType = TransactionType.Buy))
-    val updatedAskAcct = askAcct.submitTransaction(Transaction(askAcct.userId,baseCurrencyAmount = askTotalAmount,otherCurrencyAmount = askOrder.amount * -1,transactionType = TransactionType.Sell))
+    logger.debug(s"\n Bid amt: ${bidTotalAmount} \n Ask amt: ${askTotalAmount}")
+
+    val updatedBidAcct = bidAcct.submitTransaction(Transaction(bidAcct.userId,baseCurrencyAmount = bidTotalAmount * -1.0,otherCurrencyAmount = bidOrder.amount,transactionType = TransactionType.Buy, orderOpt = Some(bidOrder)))
+    val updatedAskAcct = askAcct.submitTransaction(Transaction(askAcct.userId,baseCurrencyAmount = askTotalAmount,otherCurrencyAmount = askOrder.amount * -1,transactionType = TransactionType.Sell, orderOpt = Some(askOrder)))
 
     new MemoryBank(userIdToAccount + (bidOrder.userId -> updatedBidAcct, askOrder.userId -> updatedAskAcct))
   }
