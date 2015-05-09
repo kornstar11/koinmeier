@@ -27,6 +27,8 @@ trait Account {
   def baseCurrencyAmount:Double
   def otherCurrencyAmount:Double
 
+  def getLedger:Iterable[Transaction]
+
   def submitTransaction(t:Transaction):Account
 
   def userId:Int
@@ -56,6 +58,8 @@ case class MemoryAccount(val userId:Int,ledger:Seq[Transaction] = Seq.empty[Tran
     }
   }
 
+  def getLedger = ledger
+
   lazy val baseCurrencyAmount = sumLedger(true)
 
   lazy val otherCurrencyAmount = sumLedger(false)
@@ -73,7 +77,14 @@ case class MemoryAccount(val userId:Int,ledger:Seq[Transaction] = Seq.empty[Tran
 trait Bank {
   def getAccountFor(userId:Int):Option[Account]
 
-  def submitTransaction(t:Transaction):Bank
+  protected def submitTransaction(t:Transaction):Bank
+
+  def depositBaseCurrency(userId:Int,depositAmount:Double):Bank
+
+  def depositOtherCurrency(userId:Int,depositAmount:Int):Bank
+
+  def settleOrders(order1:Order,order2:Order):Bank
+
 }
 object Bank {
   def apply():Bank = {
@@ -90,7 +101,6 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
 
   def getAccountFor(userId:Int):Option[Account] = userIdToAccount.get(userId)
 
-
   def submitTransaction(t:Transaction):Bank = {
     getAccountFor(t.userId).map{acct =>
       new MemoryBank(userIdToAccount + (t.userId -> acct.submitTransaction(t)))
@@ -99,17 +109,19 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
     }
   }
 
-  def depositBaseCurrency(userId:Int,depositAmount:Double) = {
+  def depositBaseCurrency(userId:Int,depositAmount:Double):Bank = {
     submitTransaction(Transaction(userId = userId,baseCurrencyAmount = depositAmount,otherCurrencyAmount = 0,transactionType = TransactionType.Deposit))
   }
 
-  def depositOtherCurrency(userId:Int,depositAmount:Int) = {
+  def depositOtherCurrency(userId:Int,depositAmount:Int):Bank = {
     submitTransaction(Transaction(userId = userId,baseCurrencyAmount = 0.0,otherCurrencyAmount = depositAmount,transactionType = TransactionType.Deposit))
   }
 
   def settleOrders(order1:Order,order2:Order):Bank = {
     assert((order1.isBid && !order2.isBid) || (!order1.isBid && order2.isBid), "can not have two orders be bid or two orders be ask")
     assert(order1.settledPrice == order2.settledPrice, "settlePrices must be equal.")
+
+    logger.debug(s"Attempting to settle the following orders: \n ${order1} \n ${order2}")
 
     val (bidOrder,askOrder) = if(order1.isBid) order1 -> order2
     else order2 -> order1
@@ -124,8 +136,6 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
     val updatedAskAcct = askAcct.submitTransaction(Transaction(askAcct.userId,baseCurrencyAmount = askTotalAmount,otherCurrencyAmount = askOrder.amount * -1,transactionType = TransactionType.Sell))
 
     new MemoryBank(userIdToAccount + (bidOrder.userId -> updatedBidAcct, askOrder.userId -> updatedAskAcct))
-
-
   }
 
 
