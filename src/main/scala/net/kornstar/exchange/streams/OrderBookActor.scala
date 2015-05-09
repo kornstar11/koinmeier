@@ -2,9 +2,8 @@ package net.kornstar.exchange.streams
 
 import akka.actor.{ActorLogging, Actor}
 import akka.stream.actor.{ActorSubscriberMessage, OneByOneRequestStrategy, ActorPublisher, ActorSubscriber}
-import net.kornstar.exchange.collection.{OrderBook =>OB}
 import net.kornstar.exchange.streams.OrderBookActor.Message.{GetMarket, GetOrder, CancelOrder, PlaceOrder}
-import net.kornstar.exchange.collection.OrderBook.OrderBook
+import net.kornstar.exchange.collection.OrderBook
 import net.kornstar.exchange.collection.Order
 import net.kornstar.exchange.streams.messages.Tick
 import scala.concurrent.duration._
@@ -32,7 +31,7 @@ class OrderBookActor extends Actor with ActorLogging {
 
   override def preStart() = {
     log.info(s"Orderbook actor starting.")
-    become(running(OB(1)))
+    become(running(OrderBook(1)))
     system.scheduler.schedule(5 second,5 second,self,Tick)
     super.preStart()
   }

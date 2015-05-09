@@ -36,7 +36,8 @@ class BankTest extends Specification{
       acct1.getLedger.count(_.orderOpt.map(_ == orderFor1).getOrElse(false)) mustEqual(1)
       acct2.getLedger.count(_.orderOpt.map(_ == orderFor2).getOrElse(false)) mustEqual(1)
 
-
+      println(acct1.getLedger)
+      println(acct2.getLedger)
 
       success
     }
