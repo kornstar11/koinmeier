@@ -8,10 +8,12 @@ import org.slf4j.LoggerFactory
  */
 object Exchange {
   val logger = LoggerFactory.getLogger(classOf[Exchange])
+
+  def apply() = new MemoryExchange()
 }
 trait Exchange {
   def placeOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Exchange,Order)
-  def cancelOrder(userId:Int,orderId:Int):(Exchange,Option[Order])
+  def cancelOrder(orderId:Int):(Exchange,Option[Order])
   def market:OrderBookStats
   def bank:Bank
   def openOrders(userId:Int):Iterable[Order]
@@ -24,10 +26,15 @@ class MemoryExchange(orderBook:OrderBook = OrderBook(0),val bank:Bank = Bank()) 
     val (newBank,order) = bank.createOrder(userId,price,amount,isBid)
     val newOrderBook = orderBook.submit(order)
 
-    new MemoryExchange(newOrderBook,newBank) -> order
+    val settledBank = newOrderBook.fullFilledOrders.foldLeft(bank){
+      case (acc,ele) =>
+        acc.settleOrder(ele)
+    }
+
+    new MemoryExchange(newOrderBook,settledBank) -> order
   }
 
-  def cancelOrder(userId:Int,orderId:Int):(Exchange,Option[Order]) = {
+  def cancelOrder(orderId:Int):(Exchange,Option[Order]) = {
     val (newOrderBook,orderOpt) = orderBook.cancel(orderId)
 
     val newBank = orderOpt.map{o =>

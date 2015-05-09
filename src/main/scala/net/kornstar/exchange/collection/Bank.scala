@@ -23,6 +23,8 @@ trait Bank {
 
   def settleOrders(order1:Order,order2:Order):Bank
 
+  def settleOrder(order:Order):Bank
+
   def createOrder(userId:Int,price:Double,amount:Int,isBid:Boolean):(Bank,Order)
 
   def refundOrder(order:Order):Bank
@@ -94,6 +96,17 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
     val updatedAskAcct = askAcct.submitTransaction(Transaction(askAcct.userId,baseCurrencyAmount = askTotalAmount,otherCurrencyAmount = askOrder.amount * -1,transactionType = TransactionType.Sell, orderOpt = Some(askOrder)))
 
     new MemoryBank(userIdToAccount + (bidOrder.userId -> updatedBidAcct, askOrder.userId -> updatedAskAcct))
+  }
+
+  def settleOrder(order:Order):Bank = {
+    val acct = userIdToAccount.getOrElse(order.userId,Account(order.userId))
+    val totalAmount = order.settledAmount.toDouble * order.settledPrice
+
+    val updatedAcct = if(order.isBid) acct.submitTransaction(Transaction(acct.userId,baseCurrencyAmount = totalAmount * -1.0,otherCurrencyAmount = order.amount,transactionType = TransactionType.Buy, orderOpt = Some(order)))
+                      else acct.submitTransaction(Transaction(acct.userId,baseCurrencyAmount = totalAmount,otherCurrencyAmount = order.amount * -1,transactionType = TransactionType.Sell, orderOpt = Some(order)))
+
+    new MemoryBank(userIdToAccount + (order.userId -> updatedAcct))
+
   }
 
   def refundOrder(order:Order):Bank = {
