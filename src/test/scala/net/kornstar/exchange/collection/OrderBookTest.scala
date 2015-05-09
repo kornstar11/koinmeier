@@ -1,7 +1,5 @@
-package net.kornstar.exchange
+package net.kornstar.exchange.collection
 
-import net.kornstar.exchange.collection.OrderBook
-import net.kornstar.exchange.collection.Order
 import org.specs2.mutable.Specification
 
 /**

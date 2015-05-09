@@ -19,18 +19,20 @@ package object messages { //TODO Order goes here
   val id = new AtomicInteger(0)
 
   implicit val orderReads:Reads[Order] = (
+    (JsPath \ "userId").read[Int] and
     (JsPath \ "amount").read[Int] and
       (JsPath \ "price").read[Double] and
       (JsPath \ "isBid").read[Boolean]
-    )( (amount:Int,price:Double,isBid:Boolean) => {
-    Order(id.getAndIncrement,System.currentTimeMillis(),isBid,amount,price)
+    )( (userId:Int,amount:Int,price:Double,isBid:Boolean) => {
+    Order(userId,id.getAndIncrement,System.currentTimeMillis(),isBid,amount,price)
   } )
   implicit val orderWrites:Writes[Order] = (
+    (JsPath \ "userId").write[Int] and
     (JsPath \ "id").write[Int] and
     (JsPath \ "amount").write[Int] and
       (JsPath \ "price").write[Double] and
       (JsPath \ "isBid").write[Boolean]
-  )(o => (o.id,o.amount,o.price,o.isBid))
+  )(o => (o.userId,o.id,o.amount,o.price,o.isBid))
 
   implicit val simpleOrderBookStatsWrites:Writes[OrderBookStats] = (
     (JsPath \ "ask").write[Double] and

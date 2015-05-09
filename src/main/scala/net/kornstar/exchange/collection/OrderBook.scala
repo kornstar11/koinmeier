@@ -91,7 +91,6 @@ object OrderBook {
     }
 
     protected def cancel(o:Order):OrderBook = {
-      //assert(o.remainingAmount == o.amount,"Order is already half filled!")
       if(o.remainingAmount == o.amount) {
         this.copy(bids = bids - o,asks = asks - o)
       } else {
