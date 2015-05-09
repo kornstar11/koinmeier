@@ -34,8 +34,10 @@ trait Account {
 }
 
 object Account {
+  val logger = LoggerFactory.getLogger(classOf[Account])
   val idMaker:AtomicInteger = new AtomicInteger(0)
   def apply(userId:Int):Account = {
+    logger.info(s"Creating a new account for user ID ${userId}")
     Try(config.getString("account-type")).getOrElse("memory") match {
       case "memory" => new MemoryAccount(userId)
       case _ => throw new IllegalArgumentException("Unknown account type.")
@@ -98,35 +100,32 @@ class MemoryBank(userIdToAccount:Map[Int,Account] = Map.empty[Int,Account]) exte
   }
 
   def depositBaseCurrency(userId:Int,depositAmount:Double) = {
-    submitTransaction(Transaction(userId = userId,baseCurrencyAmount = depositAmount,otherCurrencyAmount = 0.0,transactionType = TransactionType.Deposit))
+    submitTransaction(Transaction(userId = userId,baseCurrencyAmount = depositAmount,otherCurrencyAmount = 0,transactionType = TransactionType.Deposit))
   }
 
-  def depositOtherCurrency(userId:Int,depositAmount:Double) = {
+  def depositOtherCurrency(userId:Int,depositAmount:Int) = {
     submitTransaction(Transaction(userId = userId,baseCurrencyAmount = 0.0,otherCurrencyAmount = depositAmount,transactionType = TransactionType.Deposit))
   }
 
-  def settleOrders(order1:Order,order2:Order):Try[Bank] = {
+  def settleOrders(order1:Order,order2:Order):Bank = {
     assert((order1.isBid && !order2.isBid) || (!order1.isBid && order2.isBid), "can not have two orders be bid or two orders be ask")
     assert(order1.settledPrice == order2.settledPrice, "settlePrices must be equal.")
 
     val (bidOrder,askOrder) = if(order1.isBid) order1 -> order2
     else order2 -> order1
 
-    for{
-      bidAcct <- userIdToAccount.get(bidOrder.userId)
-      askAcct <- userIdToAccount.get(askOrder.userId)
-    } yield {
-      val bidTotalAmount = bidOrder.amount.toDouble * bidOrder.settledPrice
-      val bidTotalAmount = askOrder.amount.toDouble * askOrder.settledPrice
+    val bidAcct = userIdToAccount.getOrElse(bidOrder.userId,Account(bidOrder.userId))
+    val askAcct = userIdToAccount.getOrElse(askOrder.userId,Account(askOrder.userId))
 
-      bidAcct.submitTransaction(Transaction(bidAcct.userId,baseCurrencyAmount = totalAmount * -1.0,otherCurrencyAmount = bidOrder.amount,transactionType = TransactionType.Buy))
-      askAcct.submitTransaction(Transaction(askAcct.userId,baseCurrencyAmount = totalAmount,otherCurrencyAmount = askOrder,transactionType = TransactionType.Buy))
+    val bidTotalAmount = bidOrder.settledAmount.toDouble * bidOrder.settledPrice
+    val askTotalAmount = askOrder.settledAmount.toDouble * askOrder.settledPrice
 
+    val updatedBidAcct = bidAcct.submitTransaction(Transaction(bidAcct.userId,baseCurrencyAmount = bidTotalAmount * -1.0,otherCurrencyAmount = bidOrder.amount,transactionType = TransactionType.Buy))
+    val updatedAskAcct = askAcct.submitTransaction(Transaction(askAcct.userId,baseCurrencyAmount = askTotalAmount,otherCurrencyAmount = askOrder.amount * -1,transactionType = TransactionType.Sell))
 
-
+    new MemoryBank(userIdToAccount + (bidOrder.userId -> updatedBidAcct, askOrder.userId -> updatedAskAcct))
 
 
-    }
   }
 
 
