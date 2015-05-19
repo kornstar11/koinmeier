@@ -59,7 +59,7 @@ class MemoryExchange(orderBook:OrderBook = OrderBook(0),val bank:Bank = Bank()) 
   }
 
   def depositOtherCurrency(userId:Int,depositAmount:Int):Exchange = {
-    val newBank = bank.depositBaseCurrency(userId,depositAmount)
+    val newBank = bank.depositOtherCurrency(userId,depositAmount)
     new MemoryExchange(orderBook,newBank)
   }
 

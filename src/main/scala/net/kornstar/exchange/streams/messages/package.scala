@@ -2,7 +2,8 @@ package net.kornstar.exchange.streams
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import net.kornstar.exchange.collection.{OrderBook, Order}
+import akka.actor.ActorRef
+import net.kornstar.exchange.collection.{Account, OrderBook, Order}
 import play.api.libs.json._ // JSON library
 import play.api.libs.json.Reads._ // Custom validation helpers
 import play.api.libs.functional.syntax._
@@ -14,6 +15,8 @@ package object messages { //TODO Order goes here
   case object Tick
   case class OrderBookStats(ask:Option[Order] = None,bid:Option[Order] = None, last:Option[Order] = None)
   case class Deposit(userId:Int,amount:Double,isBase:Boolean)
+  case class RegisterWs(userId:Int,stream:ActorRef)
+  //case class ChatMessage
   case class JsonError(error:String)
 
   implicit val depositReads:Reads[Deposit] = (
@@ -21,6 +24,11 @@ package object messages { //TODO Order goes here
       (JsPath \ "amount").read[Double] and
       (JsPath \ "isBase").read[Boolean]
     )( (userId:Int,amount:Double,isBase:Boolean) => Deposit(userId,amount,isBase) )
+
+  implicit val accountWrites:Writes[Account] = (
+    (JsPath \ "baseAmount").write[Double] and
+      (JsPath \ "otherAmount").write[Double]
+    )(a => (a.baseCurrencyAmount,a.otherCurrencyAmount))
 
   implicit val orderReads:Reads[Order] = (
     (JsPath \ "userId").read[Int] and
