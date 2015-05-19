@@ -6,7 +6,21 @@
             <Pattern>%d{HH:mm:ss.SSS} %X{akkaTimestamp} %X{akkaSource} [%thread] %-5level %logger{36} - %msg%n</Pattern>
         </layout>
     </appender>
-    <root level="DEBUG">
-        <appender-ref ref="STDOUT" />
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>/var/log/exchange/main.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- daily rollover -->
+      <fileNamePattern>/var/log/exchange/main.old.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+      <!-- keep 30 days' worth of history -->
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+    <!--<encoder class="net.logstash.logback.encoder.LogstashEncoder" /> -->
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %X{akkaTimestamp} %X{akkaSource} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+    <root level="WARN">
+        <appender-ref ref="FILE" />
     </root>
 </configuration>

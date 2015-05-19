@@ -1,8 +1,23 @@
+import AssemblyKeys._
+
 name := "exchange2"
 
 version := "1.0"
 
 scalaVersion := "2.11.6"
+
+assemblySettings
+
+jarName in assembly := "exchange.jar"
+
+test in assembly := {}
+
+mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+  {
+    case PathList("org", "java_websocket", xs @ _*)         => MergeStrategy.first
+    case x => old(x)
+  }
+}
 
 val akkaStreamVersion = "1.0-RC2"
 
@@ -14,7 +29,7 @@ resolvers += Resolver.sonatypeRepo("public")
 
 libraryDependencies += "org.specs2" %% "specs2" % "2.3.12" % "test"
 
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.3"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.13"
 
 libraryDependencies += "com.typesafe.akka" % "akka-stream-experimental_2.11" % akkaStreamVersion
 
