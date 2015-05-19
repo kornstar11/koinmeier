@@ -44,7 +44,7 @@ package object messages { //TODO Order goes here
     (JsPath \ "amount").write[Int] and
       (JsPath \ "price").write[Double] and
       (JsPath \ "isBid").write[Boolean]
-  )(o => (o.userId,o.id,o.amount,o.price,o.isBid))
+  )(o => (o.userId,o.id,o.remainingAmount,o.price,o.isBid))
 
   implicit val simpleOrderBookStatsWrites:Writes[OrderBookStats] = (
     (JsPath \ "ask").write[Double] and
