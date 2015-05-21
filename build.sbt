@@ -1,6 +1,6 @@
 import AssemblyKeys._
 
-name := "exchange2"
+name := "koinmeier-exchange"
 
 version := "1.0"
 
