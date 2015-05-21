@@ -42,6 +42,7 @@ case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],ful
   val market = OrderBookStats(ask,bid,last)
 
   def submit(o:Order) = {
+    assert(o.isValid,"Order must have a amount greater than 0 and a price greater than 0.")
     lazy val settlingTime = System.currentTimeMillis()
     val (newBidSet,newAskSet) = if(o.isBid) {
       bids + o -> asks
