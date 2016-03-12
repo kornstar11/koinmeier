@@ -25,10 +25,6 @@ object OrderBook {
 
   def askSet = SortedSet.empty[Order](askOrdering) //Lowest first (sell)
   def bidSet = SortedSet.empty[Order](bidOrdering) //Highest first (buy)
-
-
-
-
   def apply(assetId:Int) ={
     new OrderBook(assetId,bidSet,askSet)
   }
@@ -114,7 +110,6 @@ case class OrderBook(assetId:Int,bids:SortedSet[Order],asks:SortedSet[Order],ful
     if(potentialBidOrder.isDefined)
       potentialBidOrder
     else asks.find(_.id == id)
-
   }
 }
 
